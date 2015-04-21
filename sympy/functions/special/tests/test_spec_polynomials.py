@@ -127,6 +127,11 @@ def test_legendre():
 
     assert conjugate(legendre(n, x)) == legendre(n, conjugate(x))
 
+    #entensive conjugate test
+
+    for z in range (0, 10):
+        assert conjugate(legendre(n, z)).expand() == legendre(n, conjugate(z)).expand()
+
     assert diff(legendre(n, x), x) == \
         n*(x*legendre(n, x) - legendre(n - 1, x))/(x**2 - 1)
     assert diff(legendre(n, x), n) == Derivative(legendre(n, x), n)
@@ -170,6 +175,13 @@ def test_assoc_legendre():
 
     assert conjugate(assoc_legendre(n, m, x)) == \
         assoc_legendre(n, conjugate(m), conjugate(x))
+
+    #extensive conjuagate test
+    for i in range (10):
+        for j in range (i):
+            for k in range (10):
+                assert conjugate(assoc_legendre(i, j, k)) == \
+        assoc_legendre(i, conjugate(j), conjugate(k))
 
 
 def test_chebyshev():
