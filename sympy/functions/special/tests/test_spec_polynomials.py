@@ -121,6 +121,9 @@ def test_legendre():
 
     assert legendre(-n, x) == legendre(n - 1, x)
     assert legendre(n, -x) == (-1)**n*legendre(n, x)
+    assert legendre(n, 0) == sqrt(S.Pi)/(gamma(S.Half - n/2)*gamma(S.One + n/2))
+    assert legendre(n, 1) == 1
+    assert legendre(n, S.Infinity) == S.Infinity
 
     assert conjugate(legendre(n, x)) == legendre(n, conjugate(x))
 
@@ -143,6 +146,8 @@ def test_assoc_legendre():
     assert Plm(3, 1, x).expand() == (( 3*(1 - 5*x**2)/2 ).expand() * Q).expand()
     assert Plm(3, 2, x) == 15*x * Q**2
     assert Plm(3, 3, x) == -15 * Q**3
+    #bug
+    #assert Plm(3, 3, 0) == 2**3*sqrt(S.Pi) / (gamma((1 - 3 - 3)/2)*gamma(1 - (3 - 3)/2))
 
     # negative m
     assert Plm(1, -1, x) == -Plm(1, 1, x)/2
@@ -159,8 +164,8 @@ def test_assoc_legendre():
     assert isinstance(X, assoc_legendre)
 
     assert Plm(n, 0, x) == legendre(n, x)
-
-    raises(ValueError, lambda: Plm(-1, 0, x))
+    #raises(ValueError, lambda: Plm(-1, 0, x)) does not cover line 895
+    raises(ValueError, lambda: Plm(-1, 2, x))
     raises(ValueError, lambda: Plm(0, 1, x))
 
     assert conjugate(assoc_legendre(n, m, x)) == \
@@ -173,6 +178,7 @@ def test_chebyshev():
     assert chebyshevt(1, x) == x
     assert chebyshevt(2, x) == 2*x**2 - 1
     assert chebyshevt(3, x) == 4*x**3 - 3*x
+    assert chebyshevt(-3, x) == 4*x**3 - 3*x
 
     for n in range(1, 4):
         for k in range(n):
@@ -194,6 +200,7 @@ def test_chebyshev():
 
     assert chebyshevt(n, 0) == cos(pi*n/2)
     assert chebyshevt(n, 1) == 1
+    assert chebyshevt(n, S.Infinity) == S.Infinity
 
     assert conjugate(chebyshevt(n, x)) == chebyshevt(n, conjugate(x))
 
@@ -204,6 +211,9 @@ def test_chebyshev():
 
     assert chebyshevu(n, -x) == (-1)**n*chebyshevu(n, x)
     assert chebyshevu(-n, x) == -chebyshevu(n - 2, x)
+    assert chebyshevu(n, S.Infinity) == S.Infinity
+    assert chebyshevu(-1, x) == S.Zero
+    assert chebyshevu(-2, x) == -chebyshevu(2 - 2, x)
 
     assert chebyshevu(n, 0) == cos(pi*n/2)
     assert chebyshevu(n, 1) == n + 1
@@ -226,11 +236,14 @@ def test_hermite():
     assert hermite(n, x) == hermite(n, x)
     assert hermite(n, -x) == (-1)**n*hermite(n, x)
     assert hermite(-n, x) == hermite(-n, x)
-
+    assert hermite(n, 0) == 2**n * sqrt(S.Pi) / gamma((S.One - n)/2)
+    assert hermite(n, S.Infinity) == S.Infinity
     assert conjugate(hermite(n, x)) == hermite(n, conjugate(x))
 
     assert diff(hermite(n, x), x) == 2*n*hermite(n - 1, x)
     assert diff(hermite(n, x), n) == Derivative(hermite(n, x), n)
+
+    raises(ValueError, lambda: hermite(-1, x))
 
 
 def test_laguerre():
@@ -244,11 +257,12 @@ def test_laguerre():
 
     X = laguerre(n, x)
     assert isinstance(X, laguerre)
-
+    assert laguerre(n, S.NegativeInfinity) == S.Infinity
+    assert laguerre(n, S.Infinity) == S.NegativeOne**n * S.Infinity 
     assert laguerre(n, 0) == 1
-
+    #Bug cause infinite loop
+    #assert laguerre(-n, x) == exp(x) * laguerre(-n - 1, -x) 
     assert conjugate(laguerre(n, x)) == laguerre(n, conjugate(x))
-
     assert diff(laguerre(n, x), x) == -assoc_laguerre(n - 1, 1, x)
 
     raises(ValueError, lambda: laguerre(-2.1, x))
