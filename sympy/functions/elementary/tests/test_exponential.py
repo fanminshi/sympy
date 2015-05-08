@@ -1,8 +1,10 @@
 from sympy import (
-    symbols, log, ln, Float, nan, oo, zoo, I, pi, E, exp, Symbol,
+    symbols, log, ln, Float, nan, oo, O, zoo, I, pi, E, exp, Symbol,
     LambertW, sqrt, Rational, expand_log, S, sign, conjugate,
     sin, cos, sinh, cosh, tanh, exp_polar, re, Function, simplify)
-
+from sympy.utilities.pytest import raises, XFAIL
+from sympy.core.function import ArgumentIndexError 
+from sympy.matrices import *
 
 def test_exp_values():
 
@@ -15,10 +17,17 @@ def test_exp_values():
     assert exp(oo) == oo
     assert exp(-oo) == 0
 
+    #bug
+    #assert exp(1)._eval_is_finite() == True
+
+    #bug
+    #assert exp(oo)._eval_is_finite() == False
+    #assert exp(S.Infinity.is_negative)._eval_is_finite() == True
     assert exp(0) == 1
     assert exp(1) == E
     assert exp(-1 + x).as_base_exp() == (S.Exp1, x - 1)
     assert exp(1 + x).as_base_exp() == (S.Exp1, x + 1)
+    assert exp(2)._eval_power(x) == exp(2*x)
 
     assert exp(pi*I/2) == I
     assert exp(pi*I) == -1
@@ -41,6 +50,21 @@ def test_exp_values():
 
     assert exp(3*log(x) + oo*x) == exp(oo*x) * x**3
     assert exp(4*log(x)*log(y) + 3*log(x)) == x**3 * exp(4*log(x)*log(y))
+
+    assert exp(x).fdiff() == exp(x)
+
+    
+
+    m = Matrix([[1,0],[0,1]])
+    assert exp(m) == Matrix([[E, 0], [0, E]]) 
+
+    raises(ArgumentIndexError, lambda: exp(x).fdiff(2))
+
+def test_eval_nseries():
+    x, y = symbols('x,y')
+    assert exp(x)._eval_nseries(x,2,log(5)) == 1 + x + O(x**2)
+    assert log(x)._eval_nseries(x,2,log(5)) == log(5)
+    assert log(2**x)._eval_nseries(x,1,log(x)) == O(x)
 
 
 def test_exp_log():
@@ -134,9 +158,14 @@ def test_exp_leading_term():
 def test_exp_taylor_term():
     x = symbols('x')
     assert exp(x).taylor_term(1, x) == x
+    assert exp(x).taylor_term(-1, x) == S.Zero
+    assert exp(x).taylor_term(0, x) == S.One
+    assert exp(x).taylor_term(1, x, 2) == 2*x
     assert exp(x).taylor_term(3, x) == x**3/6
+    assert exp(x).taylor_term(3, x, x) == x**2/3
 
 def test_log_values():
+    x, y = symbols('x,y')
     assert log(nan) == nan
 
     assert log(oo) == oo
@@ -173,6 +202,8 @@ def test_log_values():
     assert log(S.Half) == -log(2)
     assert log(2*3).func is log
     assert log(2*3**2).func is log
+    assert log(2**x).fdiff(1) == 2**(-x)
+    raises(ArgumentIndexError, lambda:log(2**x).fdiff(2))
 
 
 def test_log_base():
@@ -261,6 +292,7 @@ def test_log_assumptions():
     p = symbols('p', positive=True)
     n = symbols('n', negative=True)
     z = symbols('z', zero=True)
+    x = symbols('x')
     assert log(2) > 0
     assert log(1, evaluate=False).is_zero
     assert log(1 + z).is_zero
@@ -273,6 +305,9 @@ def test_log_assumptions():
     assert log(42, evaluate=False).is_algebraic is False
 
     assert log(1 + z).is_rational
+    assert log(S.Infinity)._eval_is_positive() == True
+    assert log(x*x)._eval_as_leading_term(x) == log(x**2)
+    assert log(1)._eval_as_leading_term(1) == 0
 
 
 def test_log_hashing():
@@ -443,6 +478,7 @@ def test_log_product():
 
     expr = log(Product(-2, (n, 0, 4)))
     assert simplify(expr) == expr
+    assert log(-10).as_real_imag(False) == (log(10), pi)
 
 
 def test_issue_8866():
